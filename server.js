@@ -1,8 +1,9 @@
 import express from "express";
 import { connectDB } from "./config/db.js";
-
 import dotenv from "dotenv";
-import Product from "./models/product.model.js";
+import productRoutes from "./route/product.route.js";
+import loginRoutes from "./route/login.route.js";
+
 dotenv.config();
 
 const app = express();
@@ -12,41 +13,15 @@ app.get("/", async (req, resp) => {
   resp.send("server is ready");
 });
 
-app.get("/api/products", async (req, resp) => {
-  const products = await Product.find({});
-  return resp.status(200).json({
-    success: false,
-    data: products,
-  });
-});
+app.use("/login", loginRoutes);
+app.use("/api/products", productRoutes);
 
-app.post("/api/products", async (req, resp) => {
-  const product = req.body;
-  console.log(req.body);
-  if (!product || !product.name || !product.price || !product.image) {
-    return resp.status(400).json({
-      success: false,
-      message: "please provide all fields",
-    });
-  }
-
+var port = process.env.LISTEN_PORT || 5001;
+app.listen(port, async () => {
   try {
-    const newProduct = new Product(product);
-    newProduct.save();
-    resp.status(201).json({
-      success: true,
-      data: newProduct,
-    });
+    await connectDB();
+    console.log(`server started at https://localhost:${port}`);
   } catch (error) {
-    console.log(`error creating product ${error}`);
-    resp.status(500).json({
-      success: true,
-      message: `error creating product ${error}`,
-    });
+    console.log(`Error Connecting to MongoDB details- ${error}`);
   }
-});
-
-app.listen(5000, async () => {
-  await connectDB();
-  console.log("server started at https://localhost:5000");
 });
